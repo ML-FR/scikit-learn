@@ -7,7 +7,7 @@ from . import libsvm, liblinear
 from . import libsvm_sparse
 from ..base import BaseEstimator, ClassifierMixin
 from ..preprocessing import LabelEncoder
-from ..utils.multiclass import _ovr_decision_function
+from ..utils.multiclass import _ovr_decision_function, _ovr_decision_function_raw
 from ..utils import check_array, check_consistent_length, check_random_state
 from ..utils import column_or_1d, check_X_y
 from ..utils import compute_class_weight
@@ -550,8 +550,47 @@ class BaseSVC(BaseLibSVM, ClassifierMixin, metaclass=ABCMeta):
         """
         dec = self._decision_function(X)
         if self.decision_function_shape == 'ovr' and len(self.classes_) > 2:
-            return _ovr_decision_function(dec < 0, -dec, len(self.classes_))
+            return _ovr_decision_function(dec < 0, -dec, len(self.classes_), scale=self.votes_scale_)
         return dec
+
+    def fit(self, X, y, sample_weight=None):
+        """Fit the SVM model according to the given training data.
+
+        Parameters
+        ----------
+        X : {array-like, sparse matrix}, shape (n_samples, n_features)
+            Training vectors, where n_samples is the number of samples
+            and n_features is the number of features.
+            For kernel="precomputed", the expected shape of X is
+            (n_samples, n_samples).
+
+        y : array-like, shape (n_samples,)
+            Target values (class labels in classification, real numbers in
+            regression)
+
+        sample_weight : array-like, shape (n_samples,)
+            Per-sample weights. Rescale C per sample. Higher weights
+            force the classifier to put more emphasis on these points.
+
+        Returns
+        -------
+        self : object
+
+        Notes
+        ------
+        If X and y are not C-ordered and contiguous arrays of np.float64 and
+        X is not a scipy.sparse.csr_matrix, X and/or y may be copied.
+
+        If X is a dense array, then the other methods will not support sparse
+        matrices as input.
+        """
+        super().fit(X, y, sample_weight=sample_weight)
+        if self.decision_function_shape == 'ovr' and len(self.classes_) > 2:
+            dec = self._decision_function(X)
+            self.votes_scale_ = _ovr_decision_function_raw(dec < 0, -dec, len(self.classes_))[2]
+        else:
+            self.votes_scale_ = None
+        return self
 
     def predict(self, X):
         """Perform classification on samples in X.

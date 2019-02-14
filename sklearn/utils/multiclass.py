@@ -397,7 +397,7 @@ def class_distribution(y, sample_weight=None):
     return (classes, n_classes, class_prior)
 
 
-def _ovr_decision_function(predictions, confidences, n_classes):
+def _ovr_decision_function_raw(predictions, confidences, n_classes):
     """Compute a continuous, tie-breaking OvR decision function from OvO.
 
     It is important to include a continuous value, not only votes,
@@ -442,4 +442,35 @@ def _ovr_decision_function(predictions, confidences, n_classes):
     eps = np.finfo(sum_of_confidences.dtype).eps
     max_abs_confidence = max(abs(max_confidences), abs(min_confidences))
     scale = (0.5 - eps) / max_abs_confidence
+    return votes, sum_of_confidences, scale
+
+
+def _ovr_decision_function(predictions, confidences, n_classes, scale=None):
+    """Compute a continuous, tie-breaking OvR decision function from OvO.
+
+    It is important to include a continuous value, not only votes,
+    to make computing AUC or calibration meaningful.
+
+    Parameters
+    ----------
+    predictions : array-like, shape (n_samples, n_classifiers)
+        Predicted classes for each binary classifier.
+
+    confidences : array-like, shape (n_samples, n_classifiers)
+        Decision functions or predicted probabilities for positive class
+        for each binary classifier.
+
+    n_classes : int
+        Number of classes. n_classifiers must be
+        ``n_classes * (n_classes - 1 ) / 2``
+
+    scale: float
+        *sum_of_confidences* are rescaled with a number estimated
+        on the data itself if *scale* is None or a number estimated
+        on another dataset such a training dataset.
+    """
+    votes, sum_of_confidences, scale_ = _ovr_decision_function_raw(predictions, confidences, n_classes)
+    if scale is not None:
+        scale_ = scale
     return votes + sum_of_confidences * scale
+    

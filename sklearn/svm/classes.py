@@ -566,6 +566,11 @@ class SVC(BaseSVC):
         where ``probA_`` and ``probB_`` are learned from the dataset [2]_. For
         more information on the multiclass case and training procedure see
         section 8 of [1]_.
+    
+    votes_scale_: float
+        If *decision_function_shape == 'ovr'* and len(self.classes_) > 2,
+        method *decision_function* rescale the outputs with these constants
+        estimated on the training dataset.
 
     Examples
     --------

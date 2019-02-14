@@ -1009,3 +1009,15 @@ def test_gamma_scale():
     # gamma is not explicitly set.
     X, y = [[1, 2], [3, 2 * np.sqrt(6) / 3 + 2]], [0, 1]
     assert_no_warnings(clf.fit, X, y)
+
+
+def test_consistent_SVC_output():
+    model = svm.SVC()
+    X = iris.data[:, :3]
+    Y = iris.target
+    model.fit(X, Y)
+    X1 = X[:1] * 0.10
+    X2 = X[1:2]
+    X1X2 = np.vstack([X1, X2])
+    assert_array_equal(model.decision_function(X1), 
+                       model.decision_function(X1X2)[:1])
