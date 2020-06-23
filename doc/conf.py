@@ -39,7 +39,8 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.imgconverter',
     'sphinx_gallery.gen_gallery',
-    'sphinx_issues'
+    'sphinx_issues',
+    'pyquickhelper.sphinxext.sphinx_docassert_extension'
 ]
 
 # this is needed for some reason...
